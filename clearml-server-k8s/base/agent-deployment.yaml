@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: agent
+    app.kubernetes.io/instance: clearml-server
+    app.kubernetes.io/part-of: clearml-server
+  name: agent
+  namespace: clearml
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: agent
+      app.kubernetes.io/instance: clearml-server
+      app.kubernetes.io/part-of: clearml-server
+  progressDeadlineSeconds: 60
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: agent
+        app.kubernetes.io/instance: clearml-server
+        app.kubernetes.io/part-of: clearml-server
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                    - clearml
+      containers:
+      - image: allegroai/clearml-agent:latest
+        imagePullPolicy: Always
+        name: agent
+        # resources:
+        #   requests:
+        #     memory: "25M"
+        #     cpu: "100m"
+        #   limits:
+        #     memory: "50M"
+        #     cpu: "200m"
+        command: ["/bin/sh"]
+        args: ["-c", "python3 -m pip install clearml-agent && python3 -m clearml_agent daemon --foreground --queue default"]
+        env:
+        - name: CLEARML_WORKER_ID
+          value: "gpu-worker"
+        - name: TRAINS_API_HOST
+          value: "http://apiserver-service:8008"
+        - name: TRAINS_FILES_HOST
+          value: "http://fileserver-service:8081"
+        - name: TRAINS_WEB_HOST
+          value: "http://webserver-service:80"
+      restartPolicy: Always
+      nodeSelector:
+        app: clearml
