@@ -35,7 +35,6 @@ spec:
       containers:
       - image: allegroai/clearml-agent:latest
         imagePullPolicy: Always
-        name: agent
         # resources:
         #   requests:
         #     memory: "25M"
@@ -43,6 +42,14 @@ spec:
         #   limits:
         #     memory: "50M"
         #     cpu: "200m"
+        name: agent
+        # The allegroai/clearml-agent image has an entrypoint defined that
+        # forces the ClearML Agent to use Docker containers to run ClearML
+        # Tasks.  However, we want to run the ClearML Tasks directly in our
+        # current Pod, since this is easier to setup.
+        #
+        # We have to set our own command and args in order to override the
+        # entrypoint in the Docker image.
         command: ["/bin/sh"]
         args: ["-c", "python3 -m pip install clearml-agent && python3 -m clearml_agent daemon --foreground --queue default"]
         env:
